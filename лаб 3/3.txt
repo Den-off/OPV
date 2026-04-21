@@ -1,0 +1,169 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <iostream>
+#include <vector>
+#include <thread>
+#include <future>
+#include <atomic>
+#include <chrono>
+#include <random>
+#include <mutex>
+#include <iomanip>
+
+// Утилита для рисования линий
+void drawLine(char symbol = '-', int length = 70) {
+    std::cout << std::string(length, symbol) << std::endl;
+}
+
+// Функция вычисления факториала (с имитацией работы)
+long long factorialCalc(int number) {
+    if (number < 0) return -1;
+    if (number <= 1) return 1;
+
+    long long product = 1;
+    for (int k = 2; k <= number; ++k) {
+        product *= k;
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    }
+    return product;
+}
+
+// Информация о задании
+struct JobRecord {
+    int index;
+    int argument;
+    std::future<long long> asyncResult;
+    std::atomic<bool> isDone{ false };
+    long long computedValue = 0;
+};
+
+// Обёртка для выполнения задания через packaged_task
+void runJob(std::packaged_task<long long()> job, std::atomic<bool>& doneFlag) {
+    job();                         // выполнение
+    doneFlag.store(true, std::memory_order_release);
+}
+
+// Поток-наблюдатель за всеми заданиями
+void observerThread(std::promise<void>&& signalPromise,
+    const std::vector<JobRecord>& allJobs) {
+    std::cout << "[НАБЛЮДАТЕЛЬ] Начинаю мониторинг завершения заданий..." << std::endl;
+    bool finished = false;
+    while (!finished) {
+        finished = true;
+        for (const auto& j : allJobs) {
+            if (!j.isDone.load(std::memory_order_acquire)) {
+                finished = false;
+                break;
+            }
+        }
+        if (!finished) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+    }
+    std::cout << "[НАБЛЮДАТЕЛЬ] Все задания выполнены. Посылаю сигнал главному потоку." << std::endl;
+    signalPromise.set_value();
+}
+
+int main() {
+    setlocale(LC_ALL, "Russian");
+    system("chcp 1251 > nul");
+
+    auto programStart = std::chrono::steady_clock::now();
+
+    drawLine('=', 70);
+    std::cout << "     АСИНХРОННЫЙ ВЫЧИСЛИТЕЛЬ ФАКТОРИАЛОВ (С МОНИТОРОМ)" << std::endl;
+    drawLine('=', 70);
+    std::cout << std::endl;
+
+    const int JOBS_COUNT = 5;
+    std::vector<JobRecord> jobs(JOBS_COUNT);
+
+    // Генератор случайных аргументов от 5 до 15
+    std::random_device randDev;
+    std::mt19937 rng(randDev());
+    std::uniform_int_distribution<> argDist(5, 15);
+
+    std::cout << "Формирую " << JOBS_COUNT << " заданий на расчёт факториала..." << std::endl;
+    std::cout << std::endl;
+
+    std::vector<std::thread> workerPool;
+
+    // 1. Запуск заданий через packaged_task
+    for (int idx = 0; idx < JOBS_COUNT; ++idx) {
+        int value = argDist(rng);
+        jobs[idx].index = idx;
+        jobs[idx].argument = value;
+
+        std::packaged_task<long long()> task(
+            [value]() { return factorialCalc(value); }
+        );
+        jobs[idx].asyncResult = task.get_future();
+
+        workerPool.emplace_back(runJob, std::move(task), std::ref(jobs[idx].isDone));
+
+        std::cout << "  [ЗАПУСК] Задание " << idx << ": факториал " << value << "!" << std::endl;
+    }
+    std::cout << std::endl;
+
+    // 2. Promise и future для потока-наблюдателя
+    std::promise<void> observerPromise;
+    std::future<void> observerFuture = observerPromise.get_future();
+    std::thread observer(observerThread,
+        std::move(observerPromise),
+        std::cref(jobs));
+
+    // 3. Главный поток собирает результаты через future.get()
+    std::cout << "[ГЛАВНЫЙ ПОТОК] Приступаю к сбору результатов" << std::endl;
+    drawLine('-', 70);
+    std::cout << std::endl;
+
+    int processed = 0;
+    for (int idx = 0; idx < JOBS_COUNT; ++idx) {
+        std::cout << "  >> Ожидание результата задания " << idx << " ..." << std::endl;
+
+        auto jobStart = std::chrono::steady_clock::now();
+        try {
+            jobs[idx].computedValue = jobs[idx].asyncResult.get();  // блокировка
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - jobStart).count();
+
+            processed++;
+            std::cout << "  << Задание " << idx << " выполнено. "
+                << jobs[idx].argument << "! = " << jobs[idx].computedValue
+                << " (затрачено " << elapsed << " мс)" << std::endl;
+            std::cout << "     Прогресс: " << processed << " из " << JOBS_COUNT << " заданий обработано." << std::endl;
+        }
+        catch (const std::exception& ex) {
+            std::cout << "  !! Ошибка в задании " << idx << ": " << ex.what() << std::endl;
+        }
+        std::cout << std::endl;
+    }
+
+    // 4. Ожидание сигнала от наблюдателя через future
+    std::cout << "[ГЛАВНЫЙ ПОТОК] Ожидаю сигнала от наблюдателя" << std::endl;
+    observerFuture.wait();   // блокировка до вызова set_value()
+    std::cout << "[ГЛАВНЫЙ ПОТОК] Сигнал получен. Все задания действительно завершены." << std::endl;
+    std::cout << std::endl;
+
+    // 5. Завершение всех потоков
+    for (auto& th : workerPool) {
+        if (th.joinable()) th.join();
+    }
+    if (observer.joinable()) observer.join();
+
+    // 6. Итоговая статистика
+    auto totalElapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now() - programStart).count();
+    drawLine('=', 70);
+    std::cout << "                      ФИНАЛЬНЫЙ ОТЧЁТ" << std::endl;
+    drawLine('=', 70);
+    for (const auto& job : jobs) {
+        std::cout << "  Задание " << job.index << ": " << job.argument << "! = "
+            << std::setw(12) << job.computedValue << std::endl;
+    }
+    drawLine('-', 70);
+    std::cout << "  Общее время выполнения программы: " << totalElapsed << " мс" << std::endl;
+    drawLine('=', 70);
+    std::cout << "Программа завершена успешно." << std::endl;
+
+    return 0;
+}
