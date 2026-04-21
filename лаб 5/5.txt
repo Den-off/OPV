@@ -1,0 +1,85 @@
+#include <omp.h>
+#include <iostream>
+#include <vector>
+#include <chrono>
+#include <iomanip>
+#include <cstdlib>
+#include <ctime>
+
+using namespace std;
+using namespace chrono;
+
+int main() {
+    setlocale(LC_ALL, "rus");
+
+    const long long LENGTH = 10000000;  // размер массива
+
+    cout << "Количество элементов в массиве: " << LENGTH << endl;
+
+    int threads;
+    cout << "Введите количество потоков: ";
+    cin >> threads;
+    omp_set_num_threads(threads);
+
+    cout << "Используется потоков: " << threads << endl;
+    cout << "========================================" << endl;
+
+    vector<double> vec(LENGTH);
+
+    // Заполнение массива значениями
+    for (long long pos = 0; pos < LENGTH; pos++) {
+        vec[pos] = pos * 0.5;
+    }
+
+    // ========== ПОСЛЕДОВАТЕЛЬНОЕ СУММИРОВАНИЕ ==========
+    cout << endl << ">>> ПОСЛЕДОВАТЕЛЬНЫЙ РАСЧЁТ <<<" << endl;
+
+    auto startSeq = high_resolution_clock::now();
+
+    double seqSum = 0.0;
+    for (long long pos = 0; pos < LENGTH; pos++) {
+        seqSum += vec[pos];
+    }
+
+    auto endSeq = high_resolution_clock::now();
+    auto seqDuration = duration_cast<milliseconds>(endSeq - startSeq);
+
+    cout << "Результат: " << fixed << setprecision(2) << seqSum << endl;
+    cout << "Время выполнения: " << seqDuration.count() << " мс" << endl;
+
+    // ========== ПАРАЛЛЕЛЬНОЕ СУММИРОВАНИЕ ==========
+    cout << endl << ">>> ПАРАЛЛЕЛЬНЫЙ РАСЧЁТ <<<" << endl;
+
+    auto startPar = high_resolution_clock::now();
+
+    double parSum = 0.0;
+#pragma omp parallel for reduction(+:parSum)
+    for (long long pos = 0; pos < LENGTH; pos++) {
+        parSum += vec[pos];
+    }
+
+    auto endPar = high_resolution_clock::now();
+    auto parDuration = duration_cast<milliseconds>(endPar - startPar);
+
+    cout << "Результат: " << fixed << setprecision(2) << parSum << endl;
+    cout << "Время выполнения: " << parDuration.count() << " мс" << endl;
+
+    // ========== СРАВНЕНИЕ ==========
+    cout << endl << "=== СРАВНЕНИЕ РЕЖИМОВ ===" << endl;
+    cout << "Последовательно: " << seqDuration.count() << " мс" << endl;
+    cout << "Параллельно:     " << parDuration.count() << " мс" << endl;
+
+    if (parDuration.count() > 0) {
+        double speedup = (double)seqDuration.count() / parDuration.count();
+        cout << "Коэффициент ускорения: " << fixed << setprecision(2) << speedup << "x" << endl;
+    }
+
+    if (seqSum == parSum) {
+        cout << "Суммы идентичны!" << endl;
+    }
+    else {
+        cout << "Предупреждение: суммы не совпадают!" << endl;
+    }
+
+    return 0;
+}
