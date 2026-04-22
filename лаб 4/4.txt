@@ -10,7 +10,7 @@
 #include <chrono>
 #include <iomanip>
 
-// Класс пула рабочих потоков
+// РљР»Р°СЃСЃ РїСѓР»Р° СЂР°Р±РѕС‡РёС… РїРѕС‚РѕРєРѕРІ
 class WorkerPool {
 private:
     std::vector<std::thread> threads;
@@ -81,7 +81,7 @@ public:
     }
 };
 
-// Вычисление числа Фибоначчи (итеративный метод)
+// Р’С‹С‡РёСЃР»РµРЅРёРµ С‡РёСЃР»Р° Р¤РёР±РѕРЅР°С‡С‡Рё (РёС‚РµСЂР°С‚РёРІРЅС‹Р№ РјРµС‚РѕРґ)
 long long fibCalc(int n) {
     if (n <= 1) return n;
     long long prev = 0, curr = 1;
@@ -93,7 +93,7 @@ long long fibCalc(int n) {
     return curr;
 }
 
-// Утилита для рисования линии
+// РЈС‚РёР»РёС‚Р° РґР»СЏ СЂРёСЃРѕРІР°РЅРёСЏ Р»РёРЅРёРё
 void drawLine(char sym = '-', int width = 70) {
     std::cout << std::string(width, sym) << std::endl;
 }
@@ -105,30 +105,30 @@ int main() {
 
     try {
         drawLine('=', 70);
-        std::cout << "          ПУЛ ПОТОКОВ: ВЫЧИСЛЕНИЕ ЧИСЕЛ ФИБОНАЧЧИ" << std::endl;
+        std::cout << "          РџРЈР› РџРћРўРћРљРћР’: Р’Р«Р§РРЎР›Р•РќРР• Р§РРЎР•Р› Р¤РР‘РћРќРђР§Р§Р" << std::endl;
         drawLine('=', 70);
 
         const size_t threadAmount = 4;
-        std::cout << "\n[НАСТРОЙКА] Создаём пул из " << threadAmount << " рабочих потоков." << std::endl;
+        std::cout << "\n[РќРђРЎРўР РћР™РљРђ] РЎРѕР·РґР°С‘Рј РїСѓР» РёР· " << threadAmount << " СЂР°Р±РѕС‡РёС… РїРѕС‚РѕРєРѕРІ." << std::endl;
         WorkerPool pool(threadAmount);
-        std::cout << "[НАСТРОЙКА] Пул успешно запущен." << std::endl;
+        std::cout << "[РќРђРЎРўР РћР™РљРђ] РџСѓР» СѓСЃРїРµС€РЅРѕ Р·Р°РїСѓС‰РµРЅ." << std::endl;
 
         const int totalJobs = 20;
         std::vector<std::future<long long>> jobResults;
         jobResults.reserve(totalJobs);
 
-        std::cout << "\n--- Отправка заданий в пул ---" << std::endl;
+        std::cout << "\n--- РћС‚РїСЂР°РІРєР° Р·Р°РґР°РЅРёР№ РІ РїСѓР» ---" << std::endl;
         drawLine('-', 70);
 
         for (int idx = 0; idx < totalJobs; ++idx) {
             int arg = 10 + idx;
             jobResults.emplace_back(pool.submit(fibCalc, arg));
-            std::cout << "  Задание " << std::setw(2) << (idx + 1) << ": Fibonacci(" << arg << ") добавлено." << std::endl;
+            std::cout << "  Р—Р°РґР°РЅРёРµ " << std::setw(2) << (idx + 1) << ": Fibonacci(" << arg << ") РґРѕР±Р°РІР»РµРЅРѕ." << std::endl;
         }
 
-        std::cout << "\n--- Получение результатов (блокировка get) ---" << std::endl;
+        std::cout << "\n--- РџРѕР»СѓС‡РµРЅРёРµ СЂРµР·СѓР»СЊС‚Р°С‚РѕРІ (Р±Р»РѕРєРёСЂРѕРІРєР° get) ---" << std::endl;
         drawLine('-', 70);
-        std::cout << "  №   |  арг  |      Fibonacci(арг)" << std::endl;
+        std::cout << "  в„–   |  Р°СЂРі  |      Fibonacci(Р°СЂРі)" << std::endl;
         drawLine('-', 70);
 
         for (size_t pos = 0; pos < jobResults.size(); ++pos) {
@@ -140,17 +140,17 @@ int main() {
         }
 
         drawLine('-', 70);
-        std::cout << "[ЗАВЕРШЕНИЕ] Все " << totalJobs << " заданий выполнены." << std::endl;
+        std::cout << "[Р—РђР’Р•Р РЁР•РќРР•] Р’СЃРµ " << totalJobs << " Р·Р°РґР°РЅРёР№ РІС‹РїРѕР»РЅРµРЅС‹." << std::endl;
 
         auto finishMoment = std::chrono::steady_clock::now();
         auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(finishMoment - startMoment).count();
-        std::cout << "\n[СТАТИСТИКА] Общее время работы: " << elapsedMs << " мс." << std::endl;
+        std::cout << "\n[РЎРўРђРўРРЎРўРРљРђ] РћР±С‰РµРµ РІСЂРµРјСЏ СЂР°Р±РѕС‚С‹: " << elapsedMs << " РјСЃ." << std::endl;
 
         drawLine('=', 70);
-        std::cout << "Программа завершена корректно." << std::endl;
+        std::cout << "РџСЂРѕРіСЂР°РјРјР° Р·Р°РІРµСЂС€РµРЅР° РєРѕСЂСЂРµРєС‚РЅРѕ." << std::endl;
     }
     catch (const std::exception& ex) {
-        std::cerr << "КРИТИЧЕСКАЯ ОШИБКА: " << ex.what() << std::endl;
+        std::cerr << "РљР РРўРР§Р•РЎРљРђРЇ РћРЁРР‘РљРђ: " << ex.what() << std::endl;
         return 1;
     }
 
