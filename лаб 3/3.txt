@@ -9,12 +9,12 @@
 #include <mutex>
 #include <iomanip>
 
-// Утилита для рисования линий
+// РЈС‚РёР»РёС‚Р° РґР»СЏ СЂРёСЃРѕРІР°РЅРёСЏ Р»РёРЅРёР№
 void drawLine(char symbol = '-', int length = 70) {
     std::cout << std::string(length, symbol) << std::endl;
 }
 
-// Функция вычисления факториала (с имитацией работы)
+// Р¤СѓРЅРєС†РёСЏ РІС‹С‡РёСЃР»РµРЅРёСЏ С„Р°РєС‚РѕСЂРёР°Р»Р° (СЃ РёРјРёС‚Р°С†РёРµР№ СЂР°Р±РѕС‚С‹)
 long long factorialCalc(int number) {
     if (number < 0) return -1;
     if (number <= 1) return 1;
@@ -27,7 +27,7 @@ long long factorialCalc(int number) {
     return product;
 }
 
-// Информация о задании
+// РРЅС„РѕСЂРјР°С†РёСЏ Рѕ Р·Р°РґР°РЅРёРё
 struct JobRecord {
     int index;
     int argument;
@@ -36,16 +36,16 @@ struct JobRecord {
     long long computedValue = 0;
 };
 
-// Обёртка для выполнения задания через packaged_task
+// РћР±С‘СЂС‚РєР° РґР»СЏ РІС‹РїРѕР»РЅРµРЅРёСЏ Р·Р°РґР°РЅРёСЏ С‡РµСЂРµР· packaged_task
 void runJob(std::packaged_task<long long()> job, std::atomic<bool>& doneFlag) {
-    job();                         // выполнение
+    job();                         // РІС‹РїРѕР»РЅРµРЅРёРµ
     doneFlag.store(true, std::memory_order_release);
 }
 
-// Поток-наблюдатель за всеми заданиями
+// РџРѕС‚РѕРє-РЅР°Р±Р»СЋРґР°С‚РµР»СЊ Р·Р° РІСЃРµРјРё Р·Р°РґР°РЅРёСЏРјРё
 void observerThread(std::promise<void>&& signalPromise,
     const std::vector<JobRecord>& allJobs) {
-    std::cout << "[НАБЛЮДАТЕЛЬ] Начинаю мониторинг завершения заданий..." << std::endl;
+    std::cout << "[РќРђР‘Р›Р®Р”РђРўР•Р›Р¬] РќР°С‡РёРЅР°СЋ РјРѕРЅРёС‚РѕСЂРёРЅРі Р·Р°РІРµСЂС€РµРЅРёСЏ Р·Р°РґР°РЅРёР№..." << std::endl;
     bool finished = false;
     while (!finished) {
         finished = true;
@@ -59,7 +59,7 @@ void observerThread(std::promise<void>&& signalPromise,
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }
-    std::cout << "[НАБЛЮДАТЕЛЬ] Все задания выполнены. Посылаю сигнал главному потоку." << std::endl;
+    std::cout << "[РќРђР‘Р›Р®Р”РђРўР•Р›Р¬] Р’СЃРµ Р·Р°РґР°РЅРёСЏ РІС‹РїРѕР»РЅРµРЅС‹. РџРѕСЃС‹Р»Р°СЋ СЃРёРіРЅР°Р» РіР»Р°РІРЅРѕРјСѓ РїРѕС‚РѕРєСѓ." << std::endl;
     signalPromise.set_value();
 }
 
@@ -70,24 +70,24 @@ int main() {
     auto programStart = std::chrono::steady_clock::now();
 
     drawLine('=', 70);
-    std::cout << "     АСИНХРОННЫЙ ВЫЧИСЛИТЕЛЬ ФАКТОРИАЛОВ (С МОНИТОРОМ)" << std::endl;
+    std::cout << "     РђРЎРРќРҐР РћРќРќР«Р™ Р’Р«Р§РРЎР›РРўР•Р›Р¬ Р¤РђРљРўРћР РРђР›РћР’ (РЎ РњРћРќРРўРћР РћРњ)" << std::endl;
     drawLine('=', 70);
     std::cout << std::endl;
 
     const int JOBS_COUNT = 5;
     std::vector<JobRecord> jobs(JOBS_COUNT);
 
-    // Генератор случайных аргументов от 5 до 15
+    // Р“РµРЅРµСЂР°С‚РѕСЂ СЃР»СѓС‡Р°Р№РЅС‹С… Р°СЂРіСѓРјРµРЅС‚РѕРІ РѕС‚ 5 РґРѕ 15
     std::random_device randDev;
     std::mt19937 rng(randDev());
     std::uniform_int_distribution<> argDist(5, 15);
 
-    std::cout << "Формирую " << JOBS_COUNT << " заданий на расчёт факториала..." << std::endl;
+    std::cout << "Р¤РѕСЂРјРёСЂСѓСЋ " << JOBS_COUNT << " Р·Р°РґР°РЅРёР№ РЅР° СЂР°СЃС‡С‘С‚ С„Р°РєС‚РѕСЂРёР°Р»Р°..." << std::endl;
     std::cout << std::endl;
 
     std::vector<std::thread> workerPool;
 
-    // 1. Запуск заданий через packaged_task
+    // 1. Р—Р°РїСѓСЃРє Р·Р°РґР°РЅРёР№ С‡РµСЂРµР· packaged_task
     for (int idx = 0; idx < JOBS_COUNT; ++idx) {
         int value = argDist(rng);
         jobs[idx].index = idx;
@@ -100,70 +100,70 @@ int main() {
 
         workerPool.emplace_back(runJob, std::move(task), std::ref(jobs[idx].isDone));
 
-        std::cout << "  [ЗАПУСК] Задание " << idx << ": факториал " << value << "!" << std::endl;
+        std::cout << "  [Р—РђРџРЈРЎРљ] Р—Р°РґР°РЅРёРµ " << idx << ": С„Р°РєС‚РѕСЂРёР°Р» " << value << "!" << std::endl;
     }
     std::cout << std::endl;
 
-    // 2. Promise и future для потока-наблюдателя
+    // 2. Promise Рё future РґР»СЏ РїРѕС‚РѕРєР°-РЅР°Р±Р»СЋРґР°С‚РµР»СЏ
     std::promise<void> observerPromise;
     std::future<void> observerFuture = observerPromise.get_future();
     std::thread observer(observerThread,
         std::move(observerPromise),
         std::cref(jobs));
 
-    // 3. Главный поток собирает результаты через future.get()
-    std::cout << "[ГЛАВНЫЙ ПОТОК] Приступаю к сбору результатов" << std::endl;
+    // 3. Р“Р»Р°РІРЅС‹Р№ РїРѕС‚РѕРє СЃРѕР±РёСЂР°РµС‚ СЂРµР·СѓР»СЊС‚Р°С‚С‹ С‡РµСЂРµР· future.get()
+    std::cout << "[Р“Р›РђР’РќР«Р™ РџРћРўРћРљ] РџСЂРёСЃС‚СѓРїР°СЋ Рє СЃР±РѕСЂСѓ СЂРµР·СѓР»СЊС‚Р°С‚РѕРІ" << std::endl;
     drawLine('-', 70);
     std::cout << std::endl;
 
     int processed = 0;
     for (int idx = 0; idx < JOBS_COUNT; ++idx) {
-        std::cout << "  >> Ожидание результата задания " << idx << " ..." << std::endl;
+        std::cout << "  >> РћР¶РёРґР°РЅРёРµ СЂРµР·СѓР»СЊС‚Р°С‚Р° Р·Р°РґР°РЅРёСЏ " << idx << " ..." << std::endl;
 
         auto jobStart = std::chrono::steady_clock::now();
         try {
-            jobs[idx].computedValue = jobs[idx].asyncResult.get();  // блокировка
+            jobs[idx].computedValue = jobs[idx].asyncResult.get();  // Р±Р»РѕРєРёСЂРѕРІРєР°
             auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::steady_clock::now() - jobStart).count();
 
             processed++;
-            std::cout << "  << Задание " << idx << " выполнено. "
+            std::cout << "  << Р—Р°РґР°РЅРёРµ " << idx << " РІС‹РїРѕР»РЅРµРЅРѕ. "
                 << jobs[idx].argument << "! = " << jobs[idx].computedValue
-                << " (затрачено " << elapsed << " мс)" << std::endl;
-            std::cout << "     Прогресс: " << processed << " из " << JOBS_COUNT << " заданий обработано." << std::endl;
+                << " (Р·Р°С‚СЂР°С‡РµРЅРѕ " << elapsed << " РјСЃ)" << std::endl;
+            std::cout << "     РџСЂРѕРіСЂРµСЃСЃ: " << processed << " РёР· " << JOBS_COUNT << " Р·Р°РґР°РЅРёР№ РѕР±СЂР°Р±РѕС‚Р°РЅРѕ." << std::endl;
         }
         catch (const std::exception& ex) {
-            std::cout << "  !! Ошибка в задании " << idx << ": " << ex.what() << std::endl;
+            std::cout << "  !! РћС€РёР±РєР° РІ Р·Р°РґР°РЅРёРё " << idx << ": " << ex.what() << std::endl;
         }
         std::cout << std::endl;
     }
 
-    // 4. Ожидание сигнала от наблюдателя через future
-    std::cout << "[ГЛАВНЫЙ ПОТОК] Ожидаю сигнала от наблюдателя" << std::endl;
-    observerFuture.wait();   // блокировка до вызова set_value()
-    std::cout << "[ГЛАВНЫЙ ПОТОК] Сигнал получен. Все задания действительно завершены." << std::endl;
+    // 4. РћР¶РёРґР°РЅРёРµ СЃРёРіРЅР°Р»Р° РѕС‚ РЅР°Р±Р»СЋРґР°С‚РµР»СЏ С‡РµСЂРµР· future
+    std::cout << "[Р“Р›РђР’РќР«Р™ РџРћРўРћРљ] РћР¶РёРґР°СЋ СЃРёРіРЅР°Р»Р° РѕС‚ РЅР°Р±Р»СЋРґР°С‚РµР»СЏ" << std::endl;
+    observerFuture.wait();   // Р±Р»РѕРєРёСЂРѕРІРєР° РґРѕ РІС‹Р·РѕРІР° set_value()
+    std::cout << "[Р“Р›РђР’РќР«Р™ РџРћРўРћРљ] РЎРёРіРЅР°Р» РїРѕР»СѓС‡РµРЅ. Р’СЃРµ Р·Р°РґР°РЅРёСЏ РґРµР№СЃС‚РІРёС‚РµР»СЊРЅРѕ Р·Р°РІРµСЂС€РµРЅС‹." << std::endl;
     std::cout << std::endl;
 
-    // 5. Завершение всех потоков
+    // 5. Р—Р°РІРµСЂС€РµРЅРёРµ РІСЃРµС… РїРѕС‚РѕРєРѕРІ
     for (auto& th : workerPool) {
         if (th.joinable()) th.join();
     }
     if (observer.joinable()) observer.join();
 
-    // 6. Итоговая статистика
+    // 6. РС‚РѕРіРѕРІР°СЏ СЃС‚Р°С‚РёСЃС‚РёРєР°
     auto totalElapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::steady_clock::now() - programStart).count();
     drawLine('=', 70);
-    std::cout << "                      ФИНАЛЬНЫЙ ОТЧЁТ" << std::endl;
+    std::cout << "                      Р¤РРќРђР›Р¬РќР«Р™ РћРўР§РЃРў" << std::endl;
     drawLine('=', 70);
     for (const auto& job : jobs) {
-        std::cout << "  Задание " << job.index << ": " << job.argument << "! = "
+        std::cout << "  Р—Р°РґР°РЅРёРµ " << job.index << ": " << job.argument << "! = "
             << std::setw(12) << job.computedValue << std::endl;
     }
     drawLine('-', 70);
-    std::cout << "  Общее время выполнения программы: " << totalElapsed << " мс" << std::endl;
+    std::cout << "  РћР±С‰РµРµ РІСЂРµРјСЏ РІС‹РїРѕР»РЅРµРЅРёСЏ РїСЂРѕРіСЂР°РјРјС‹: " << totalElapsed << " РјСЃ" << std::endl;
     drawLine('=', 70);
-    std::cout << "Программа завершена успешно." << std::endl;
+    std::cout << "РџСЂРѕРіСЂР°РјРјР° Р·Р°РІРµСЂС€РµРЅР° СѓСЃРїРµС€РЅРѕ." << std::endl;
 
     return 0;
 }
