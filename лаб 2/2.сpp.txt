@@ -11,7 +11,7 @@
 
 using namespace std;
 
-// Класс потокобезопасной очереди заданий
+// РљР»Р°СЃСЃ РїРѕС‚РѕРєРѕР±РµР·РѕРїР°СЃРЅРѕР№ РѕС‡РµСЂРµРґРё Р·Р°РґР°РЅРёР№
 class JobQueue {
 private:
     queue<int> jobs;
@@ -29,7 +29,7 @@ public:
     bool fetch(int& job) {
         unique_lock<mutex> lock(queueMutex);
 
-        cout << "Рабочий " << this_thread::get_id() << " ожидает задание...\n";
+        cout << "Р Р°Р±РѕС‡РёР№ " << this_thread::get_id() << " РѕР¶РёРґР°РµС‚ Р·Р°РґР°РЅРёРµ...\n";
         lock.unlock();
         lock.lock();
 
@@ -51,7 +51,7 @@ public:
     }
 };
 
-// Рекурсивный мьютекс для логирования
+// Р РµРєСѓСЂСЃРёРІРЅС‹Р№ РјСЊСЋС‚РµРєСЃ РґР»СЏ Р»РѕРіРёСЂРѕРІР°РЅРёСЏ
 recursive_mutex logLock;
 
 void writeLog(const string& msg) {
@@ -59,33 +59,33 @@ void writeLog(const string& msg) {
     cout << msg << endl;
 }
 
-// Функция-генератор заданий (producer)
+// Р¤СѓРЅРєС†РёСЏ-РіРµРЅРµСЂР°С‚РѕСЂ Р·Р°РґР°РЅРёР№ (producer)
 void generator(JobQueue& jobQ) {
-    writeLog("Генератор " + [](const thread::id& id) {
+    writeLog("Р“РµРЅРµСЂР°С‚РѕСЂ " + [](const thread::id& id) {
         stringstream ss; ss << id; return ss.str();
-        }(this_thread::get_id()) + " запущен");
+        }(this_thread::get_id()) + " Р·Р°РїСѓС‰РµРЅ");
 
     for (int num = 1; num <= 20; ++num) {
         {
             lock_guard<recursive_mutex> lock(logLock);
-            cout << "Создано задание: " << num << endl;
+            cout << "РЎРѕР·РґР°РЅРѕ Р·Р°РґР°РЅРёРµ: " << num << endl;
         }
         jobQ.add(num);
         this_thread::sleep_for(chrono::milliseconds(100));
     }
 
     jobQ.markFinished();
-    writeLog("Генератор завершил работу");
+    writeLog("Р“РµРЅРµСЂР°С‚РѕСЂ Р·Р°РІРµСЂС€РёР» СЂР°Р±РѕС‚Сѓ");
 }
 
-// Функция-обработчик заданий (consumer)
+// Р¤СѓРЅРєС†РёСЏ-РѕР±СЂР°Р±РѕС‚С‡РёРє Р·Р°РґР°РЅРёР№ (consumer)
 void worker(JobQueue& jobQ, map<thread::id, int>& counters, mutex& countersMutex) {
     thread_local int handledCount = 0;
 
     thread::id tid = this_thread::get_id();
-    writeLog("Обработчик " + [](const thread::id& id) {
+    writeLog("РћР±СЂР°Р±РѕС‚С‡РёРє " + [](const thread::id& id) {
         stringstream ss; ss << id; return ss.str();
-        }(tid) + " запущен");
+        }(tid) + " Р·Р°РїСѓС‰РµРЅ");
 
     int task;
     while (jobQ.fetch(task)) {
@@ -93,9 +93,9 @@ void worker(JobQueue& jobQ, map<thread::id, int>& counters, mutex& countersMutex
 
         {
             lock_guard<recursive_mutex> lock(logLock);
-            cout << "Обработчик " << tid
-                 << " выполнил задание " << task
-                 << " -> квадрат = " << square << endl;
+            cout << "РћР±СЂР°Р±РѕС‚С‡РёРє " << tid
+                 << " РІС‹РїРѕР»РЅРёР» Р·Р°РґР°РЅРёРµ " << task
+                 << " -> РєРІР°РґСЂР°С‚ = " << square << endl;
         }
 
         handledCount++;
@@ -130,13 +130,13 @@ int main() {
         w.join();
     }
 
-    cout << "\n=== Итоговая статистика ===\n";
+    cout << "\n=== РС‚РѕРіРѕРІР°СЏ СЃС‚Р°С‚РёСЃС‚РёРєР° ===\n";
     int total = 0;
     for (const auto& [tid, cnt] : workerCounters) {
-        cout << "Обработчик " << tid << " обработал " << cnt << " заданий\n";
+        cout << "РћР±СЂР°Р±РѕС‚С‡РёРє " << tid << " РѕР±СЂР°Р±РѕС‚Р°Р» " << cnt << " Р·Р°РґР°РЅРёР№\n";
         total += cnt;
     }
-    cout << "Всего обработано заданий: " << total << endl;
+    cout << "Р’СЃРµРіРѕ РѕР±СЂР°Р±РѕС‚Р°РЅРѕ Р·Р°РґР°РЅРёР№: " << total << endl;
 
     return 0;
 }
